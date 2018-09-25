@@ -1,0 +1,7 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ["build", "-t", "gcr.io/$PROJECT_ID/mercari-api:$COMMIT_SHA", "-t", "gcr.io/$PROJECT_ID/mercari-api:latest", "-f", "Dockerfile", "."]
+  dir: mercari-api
+images:
+- 'gcr.io/$PROJECT_ID/mercari-api:$COMMIT_SHA'
+- 'gcr.io/$PROJECT_ID/mercari-api:latest'
