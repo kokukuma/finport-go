@@ -1,16 +1,21 @@
 FROM golang:latest as builder
 
-ENV CGO_ENABLED=0
-ENV GOOS=linux
-ENV GOARCH=amd64
+WORKDIR /go/src/github.com/kokukuma/finport-go
 
-COPY . /go/src/
-WORKDIR /go/src/
-RUN make
+RUN go get github.com/golang/dep/cmd/dep
+COPY Gopkg.toml Gopkg.lock ./
+RUN dep ensure -v -vendor-only
+
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go install -v \
+            -ldflags="-w -s" \
+            -ldflags "-X main.version=1.0" \
+            -ldflags "-X main.serviceName=finport-go" \
+            github.com/kokukuma/finport-go/cmd/server
 
 # runtime image
-FROM alpine
+FROM alpine:latest
 RUN apk add --no-cache ca-certificates
-COPY --from=builder /go/src/app /app
+COPY --from=builder /go/bin/server /server
 EXPOSE 8080
-ENTRYPOINT ["/app"]
+ENTRYPOINT ["/server"]

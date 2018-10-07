@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: finport-config
+  namespace: default
+data:
+  GCP_PROJECT_ID: kouzoh-p-kokukuma
+  SENTRY_DSN: https://key:secret@sentry.io/project
+  ENV: development
+  AUTHORITY_SERVICE_ENDPOINT: authority:3000
+  LOG_LEVEL: DEBUG
+
+---
+
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: finport
+  namespace: default
+  labels:
+    source: finport
+    app: spinnaker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      source: finport
+      app: spinnaker
+  template:
+    metadata:
+      labels:
+        source: finport
+        app: spinnaker
+    spec:
+      containers:
+      - name: finport
+        image: gcr.io/pipeline-test-198007/finport:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: finport-config
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: finport
+  namespace: default
+spec:
+  selector:
+    source: finport
+    app: spinnaker
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: LoadBalancer
