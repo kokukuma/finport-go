@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 )
 
 type authData struct {
@@ -39,15 +38,6 @@ func main() {
 	http.HandleFunc("/", helloWorld)
 
 	//
-	keyFile := os.Getenv("KEY_PATH")
-	crtFile := os.Getenv("CRT_PATH")
-
-	//
-	if keyFile == "" || crtFile == "" {
-		log.Print("Start http")
-		log.Fatal(http.ListenAndServe(":8080", nil))
-	} else {
-		log.Print("Start https")
-		log.Fatal(http.ListenAndServeTLS(":8080", crtFile, keyFile, nil))
-	}
+	log.Print("Start http")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
