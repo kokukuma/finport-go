@@ -22,7 +22,7 @@ func helloWorld(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// jsonエンコード
-	outputJson, err := json.Marshal(&auth)
+	outputJSON, err := json.Marshal(&auth)
 	if err != nil {
 		fmt.Fprintf(w, "HelloWorld")
 		return
@@ -32,7 +32,7 @@ func helloWorld(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	// jsonデータを出力
-	fmt.Fprint(w, string(outputJson))
+	fmt.Fprint(w, string(outputJSON))
 }
 
 func main() {
