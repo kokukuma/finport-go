@@ -14,8 +14,14 @@ const (
 )
 
 func main() {
+	// setting logger
+	logger, err := log.New("DEBUG")
+	if err != nil {
+		logger.Error(err.Error())
+	}
+
 	// setting profiler
-	err := profiler.Start(profiler.Config{
+	err = profiler.Start(profiler.Config{
 		Service:              "finport-profiler",
 		NoHeapProfiling:      true,
 		NoAllocProfiling:     true,
@@ -24,12 +30,6 @@ func main() {
 		// ProjectID must be set if not running on GCP.
 		// ProjectID: "my-project",
 	})
-	if err != nil {
-		logger.Error("failed to start the profiler: %v", err)
-	}
-
-	// setting logger
-	logger, err := log.New("DEBUG")
 	if err != nil {
 		logger.Error(err.Error())
 	}
