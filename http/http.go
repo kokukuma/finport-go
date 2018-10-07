@@ -1,13 +1,58 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
 
+	"github.com/kelseyhightower/envconfig"
+	"github.com/pkg/errors"
+
 	"go.uber.org/zap"
 )
+
+// Env represent settings of http server
+type Env struct {
+	// LogLevel is INFO or DEBUG. Default is "INFO".
+	LogLevel string `envconfig:"LOG_LEVEL" default:"INFO"`
+
+	// Env is environment where application is running. This value is used to
+	// annotate datadog metrics or sentry error reporting. The value must be
+	// "development" or "production".
+	Env string `envconfig:"ENV" required:"true"`
+
+	// GCPProjectID is you service GCP project ID. You can create your own
+	// service GCP project by https://github.com/kouzoh/microservices-terraform.
+	GCPProjectID string `envconfig:"GCP_PROJECT_ID" required:"true"`
+
+	// SentryDSN is DSN for sentry.io. You can get DSN from your application
+	// sentry dashboard. You can create your own sentry application service by
+	// https://github.com/kouzoh/microservices-terraform.
+	SentryDSN string `envconfig:"SENTRY_DSN" required:"true"`
+
+	// DDAgentHostname is hostname where datadog agent working. In citadel-dev
+	// and citadel-prod cluster, datadog agent is running on the every host
+	// (by daemonset). This hostname is dynamic and can be changed when new pod
+	// is deployed.
+	//
+	// In kubernetes, you can get your own pod deployment information by using
+	// `fieldRef` function.
+	DDAgentHostname string `envconfig:"DD_AGENT_HOSTNAME" default:"localhost"`
+
+	// HTTP Port
+	HTTPPort int `envconfig:"HTTP_PORT" default:"8080"`
+}
+
+// ReadFromEnv read settings from environment values
+func ReadFromEnv() (*Env, error) {
+	var env Env
+	if err := envconfig.Process("", &env); err != nil {
+		return nil, errors.Wrap(err, "failed to process envconfig")
+	}
+	return &env, nil
+}
 
 // Server is a test server
 type Server struct {
@@ -28,11 +73,16 @@ func (s *Server) Serve(ln net.Listener) error {
 
 	// ErrServerClosed is returned by the Server's Serve
 	// after a call to Shutdown or Close, we can ignore it.
-	if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
+	if err := server.Serve(ln); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// Shutdown close http server
+func (s *Server) Shutdown(ctx context.Context) {
+	s.server.Shutdown(ctx)
 }
 
 // New creates new HTTP server. The handlers are registered inside

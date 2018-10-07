@@ -4,11 +4,10 @@ metadata:
   name: finport-config
   namespace: default
 data:
-  GCP_PROJECT_ID: kouzoh-p-kokukuma
-  SENTRY_DSN: https://key:secret@sentry.io/project
+  GCP_PROJECT_ID: pipeline-test-198007
   ENV: development
-  AUTHORITY_SERVICE_ENDPOINT: authority:3000
   LOG_LEVEL: DEBUG
+  SENTRY_DSN: https://key:secret@sentry.io/project
 
 ---
 

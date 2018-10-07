@@ -1,21 +1,29 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"net"
+	"time"
+
+	"go.uber.org/zap"
 
 	"cloud.google.com/go/profiler"
 
+	raven "github.com/getsentry/raven-go"
 	"github.com/kokukuma/finport-go/http"
 	"github.com/kokukuma/finport-go/log"
 )
 
-const (
-	httpAddr = ":8080"
-)
-
 func main() {
+	// read setttings
+	env, err := http.ReadFromEnv()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
 	// setting logger
-	logger, err := log.New("DEBUG")
+	logger, err := log.New(env.LogLevel)
 	if err != nil {
 		logger.Error(err.Error())
 	}
@@ -34,20 +42,56 @@ func main() {
 		logger.Error(err.Error())
 	}
 
-	// create a new server
-	server, err := http.New(logger)
+	// setting sentry
+	sentryClient, err := raven.New(env.SentryDSN)
 	if err != nil {
 		logger.Error(err.Error())
+		//return exitError
+	} else {
+		sentryClient.SetEnvironment(env.Env)
+		sentryClient.SetRelease("1.1")
 	}
 
 	// start server
-	httpLn, err := net.Listen("tcp", httpAddr)
+	for {
+		err = startServer(env, logger)
+		if err != nil {
+			sentryClient.CaptureError(err, map[string]string{
+				"environment": "development",
+			})
+			logger.Error(err.Error())
+		}
+	}
+}
+
+func startServer(env *http.Env, logger *zap.Logger) error {
+	// create a new server
+	server, err := http.New(logger)
 	if err != nil {
-		logger.Error(err.Error())
+		return err
 	}
 
-	err = server.Serve(httpLn)
+	// start server
+	httpLn, err := net.Listen("tcp", fmt.Sprintf(":%d", env.HTTPPort))
 	if err != nil {
-		logger.Error(err.Error())
+		return err
+	}
+
+	errChan := make(chan error, 1)
+	go func() {
+		errChan <- server.Serve(httpLn)
+	}()
+
+	// shutdown 10 seond later
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	for {
+		select {
+		case <-ctx.Done():
+			server.Shutdown(ctx)
+		case err := <-errChan:
+			return err
+		}
 	}
 }

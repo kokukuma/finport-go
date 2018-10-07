@@ -3,7 +3,7 @@
 + errの処理を考える.
 
 ### 試して見るもの
-+ Stackdriver Profiler
++ [Stackdriver Profiler](docs/stack-driver-profiler.md)
 + Sentry
 + Datadog
 + Codecov
