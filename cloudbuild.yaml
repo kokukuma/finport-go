@@ -34,8 +34,11 @@ steps:
 
 # Upload Codecov
 - name: 'gcr.io/cloud-builders/go'
-  entrypoint: |
-    bash <(curl -s https://codecov.io/bash)
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      bash <(curl -s https://codecov.io/bash)
   secretEnv: ['CODECOV_TOKEN']
   env:
     - GOPATH=/go
@@ -53,6 +56,6 @@ images:
 - 'gcr.io/$PROJECT_ID/finport:latest'
 
 secrets:
-- kmsKeyName: "projects/$PROJECT_ID/locations/global/keyRings/finport-keyring/cryptoKeys/finport-key"
+- kmsKeyName: "projects/pipeline-test-198007/locations/global/keyRings/finport-keyring/cryptoKeys/finport-key"
   secretEnv:
     CODECOV_TOKEN: "CiQAO5yYDB/I7srZwBkDNMG36uOnDxliSc1kbAAncJHsZEiHYDISTQBflPn1buG1Sb4l4CQcb4iUsxpA03WNVXDw1VoFUBcZ1yA257KY2YUO1YD3+H6YnNmaRkXH4LTLSFSc74wihlKdXgjkzYBCT5suP67Q"
