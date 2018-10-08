@@ -33,15 +33,13 @@ steps:
     path: '/go/src/github.com/kokukuma/finport-go'
 
 # Upload Codecov
-- name: 'gcr.io/cloud-builders/go'
+- name: 'ubuntu'
   entrypoint: 'bash'
   args:
     - '-c'
     - |
       bash <(curl -s https://codecov.io/bash)
   secretEnv: ['CODECOV_TOKEN']
-  env:
-    - GOPATH=/go
   dir: '/go/src/github.com/kokukuma/finport-go'
   volumes:
   - name: 'vol1'
