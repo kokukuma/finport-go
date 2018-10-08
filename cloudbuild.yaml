@@ -1,22 +1,23 @@
 steps:
-# Prepare go directory
-- name: 'ubuntu'
+# Test
+- id: 'Prepare go directory'
+  name: 'ubuntu'
   entrypoint: 'cp'
   args: ['-r', '.', '/go/src/github.com/kokukuma/finport-go/']
   volumes:
   - name: 'vol1'
     path: '/go/src/github.com/kokukuma/finport-go'
 
-# Install dependency
-- name: 'instrumentisto/dep:latest'
+- id: 'Install dependency'
+  name: 'instrumentisto/dep:latest'
   args: ['ensure', '-vendor-only']
   dir: '/go/src/github.com/kokukuma/finport-go'
   volumes:
   - name: 'vol1'
     path: '/go/src/github.com/kokukuma/finport-go'
 
-# Execute test
-- name: 'golang'
+- id: 'Execute test'
+  name: 'golang'
   entrypoint: go
   args:
     - 'test'
@@ -32,21 +33,29 @@ steps:
   - name: 'vol1'
     path: '/go/src/github.com/kokukuma/finport-go'
 
-# Upload Codecov
-- name: 'ubuntu'
+- id: 'Upload Codecov'
+  # name: 'cosmintitei/bash-curl'
+  name: 'ubuntu'
   entrypoint: 'bash'
   args:
     - '-c'
     - |
+      apt-get update
+      apt-get install -y curl git
       bash <(curl -s https://codecov.io/bash)
   secretEnv: ['CODECOV_TOKEN']
+  env:
+    - VCS_COMMIT_ID=$COMMIT_SHA
+    - VCS_BRANCH_NAME=$BRANCH_NAME
+    - CODECOV_SLUG=$REPO_NAME
   dir: '/go/src/github.com/kokukuma/finport-go'
   volumes:
   - name: 'vol1'
     path: '/go/src/github.com/kokukuma/finport-go'
 
-# BUILD
-- name: 'gcr.io/cloud-builders/docker'
+# Build
+- id: "Build Docker image"
+  name: 'gcr.io/cloud-builders/docker'
   args: ["build", "-t", "gcr.io/$PROJECT_ID/finport:$COMMIT_SHA", "-t", "gcr.io/$PROJECT_ID/finport:latest", "-f", "Dockerfile", "."]
 
 images:
