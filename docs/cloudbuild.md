@@ -1,7 +1,6 @@
 ## CloudBuild
 + CI
 
-
 ### Secretのもたせ方
 
 + 鍵の準備

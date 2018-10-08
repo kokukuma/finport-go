@@ -9,7 +9,8 @@
 + Datadog
 
 #### テスト系
-+ codecov
++ [codecov](docs/codecov.md)
++ [cloudbuild](docs/cloudbuild.md)
 
 #### 開発系
 + knative

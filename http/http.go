@@ -63,17 +63,13 @@ type Server struct {
 
 // Serve start http.Server
 func (s *Server) Serve(ln net.Listener) error {
-	server := &http.Server{
-		Handler: s.mux,
-	}
-	s.server = server
 
 	// show start log
 	s.logger.Info("Server start http")
 
 	// ErrServerClosed is returned by the Server's Serve
 	// after a call to Shutdown or Close, we can ignore it.
-	if err := server.Serve(ln); err != nil {
+	if err := s.server.Serve(ln); err != nil {
 		return err
 	}
 
@@ -93,6 +89,10 @@ func New(logger *zap.Logger) (*Server, error) {
 		mux:    http.NewServeMux(),
 	}
 	server.mux.Handle("/", server.helloWorld())
+
+	server.server = &http.Server{
+		Handler: server.mux,
+	}
 
 	return server, nil
 }

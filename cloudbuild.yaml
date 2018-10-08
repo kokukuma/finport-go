@@ -35,13 +35,10 @@ steps:
 
 - id: 'Upload Codecov'
   name: 'cosmintitei/bash-curl'
-  # name: 'ubuntu'
   entrypoint: 'bash'
   args:
     - '-c'
     - |
-      # apt-get update
-      # apt-get install -y curl git
       bash <(curl -s https://codecov.io/bash)
   secretEnv: ['CODECOV_TOKEN']
   env:
