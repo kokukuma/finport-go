@@ -56,6 +56,3 @@ secrets:
 - kmsKeyName: "projects/$PROJECT_ID/locations/global/keyRings/finport-keyring/cryptoKeys/finport-key"
   secretEnv:
     CODECOV_TOKEN: "CiQAO5yYDB/I7srZwBkDNMG36uOnDxliSc1kbAAncJHsZEiHYDISTQBflPn1buG1Sb4l4CQcb4iUsxpA03WNVXDw1VoFUBcZ1yA257KY2YUO1YD3+H6YnNmaRkXH4LTLSFSc74wihlKdXgjkzYBCT5suP67Q"
-
-
-

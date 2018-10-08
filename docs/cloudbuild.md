@@ -3,18 +3,22 @@
 
 ###
 
-+ keyrings
++ 鍵の準備
 ```
 gcloud kms keyrings create finport-keyring \
   --location=global
-```
-
-+ key-name
-```
 gcloud kms keys create finport-key \
   --location=global \
   --keyring=finport-keyring \
   --purpose=encryption
+```
+
++ CloudBuildからアクセスできるようにする.
+```
+gcloud kms keys add-iam-policy-binding \
+    finport-key --location=global --keyring=finport-keyring \
+    --member=serviceAccount:664154218711@cloudbuild.gserviceaccount.com \
+    --role=roles/cloudkms.cryptoKeyEncrypterDecrypter
 ```
 
 + 環境変数
