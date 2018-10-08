@@ -34,20 +34,20 @@ steps:
     path: '/go/src/github.com/kokukuma/finport-go'
 
 - id: 'Upload Codecov'
-  # name: 'cosmintitei/bash-curl'
-  name: 'ubuntu'
+  name: 'cosmintitei/bash-curl'
+  # name: 'ubuntu'
   entrypoint: 'bash'
   args:
     - '-c'
     - |
-      apt-get update
-      apt-get install -y curl git
+      # apt-get update
+      # apt-get install -y curl git
       bash <(curl -s https://codecov.io/bash)
   secretEnv: ['CODECOV_TOKEN']
   env:
     - VCS_COMMIT_ID=$COMMIT_SHA
     - VCS_BRANCH_NAME=$BRANCH_NAME
-    - CODECOV_SLUG=$REPO_NAME
+    - CODECOV_SLUG=kokukuma/finport-go
   dir: '/go/src/github.com/kokukuma/finport-go'
   volumes:
   - name: 'vol1'
