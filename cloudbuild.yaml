@@ -1,19 +1,61 @@
 steps:
-# TEST
-- name: 'gcr.io/cloud-builders/go'
-  args: ['test', '-race', '-coverpkg=./...', '-coverprofile=coverage.txt', './...']
+# Prepare go directory
+- name: 'ubuntu'
+  entrypoint: 'cp'
+  args: ['-r', '.', '/go/src/github.com/kokukuma/finport-go/']
+  volumes:
+  - name: 'vol1'
+    path: '/go/src/github.com/kokukuma/finport-go'
 
-- name: 'gcr.io/cloud-builders/go'
-  command: |
-    bash <(curl -s https://codecov.io/bash)
+# Install dependency
+- name: 'instrumentisto/dep:latest'
+  args: ['ensure', '-vendor-only']
+  dir: '/go/src/github.com/kokukuma/finport-go'
+  volumes:
+  - name: 'vol1'
+    path: '/go/src/github.com/kokukuma/finport-go'
+
+# Execute test
+- name: 'golang'
+  entrypoint: go
+  args:
+    - 'test'
+    - '-race'
+    - '-coverpkg=./...'
+    - '-coverprofile=coverage.txt'
+    - './...'
   env:
-    - CODECOV_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxx
+    - GOPATH=/go
+    - GOOS=linux
+  dir: '/go/src/github.com/kokukuma/finport-go'
+  volumes:
+  - name: 'vol1'
+    path: '/go/src/github.com/kokukuma/finport-go'
+
+# Upload Codecov
+- name: 'gcr.io/cloud-builders/go'
+  entrypoint: |
+    bash <(curl -s https://codecov.io/bash)
+  secretEnv: ['CODECOV_TOKEN']
+  env:
+    - GOPATH=/go
+  dir: '/go/src/github.com/kokukuma/finport-go'
+  volumes:
+  - name: 'vol1'
+    path: '/go/src/github.com/kokukuma/finport-go'
 
 # BUILD
 - name: 'gcr.io/cloud-builders/docker'
   args: ["build", "-t", "gcr.io/$PROJECT_ID/finport:$COMMIT_SHA", "-t", "gcr.io/$PROJECT_ID/finport:latest", "-f", "Dockerfile", "."]
 
-
 images:
 - 'gcr.io/$PROJECT_ID/finport:$COMMIT_SHA'
 - 'gcr.io/$PROJECT_ID/finport:latest'
+
+secrets:
+- kmsKeyName: "projects/$PROJECT_ID/locations/global/keyRings/finport-keyring/cryptoKeys/finport-key"
+  secretEnv:
+    CODECOV_TOKEN: "CiQAO5yYDB/I7srZwBkDNMG36uOnDxliSc1kbAAncJHsZEiHYDISTQBflPn1buG1Sb4l4CQcb4iUsxpA03WNVXDw1VoFUBcZ1yA257KY2YUO1YD3+H6YnNmaRkXH4LTLSFSc74wihlKdXgjkzYBCT5suP67Q"
+
+
+
