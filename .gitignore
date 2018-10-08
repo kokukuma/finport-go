@@ -1,0 +1,5 @@
+.envrc
+vendor/
+bin/
+coverage.txt
+coverage.html

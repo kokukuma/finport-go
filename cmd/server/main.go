@@ -1,53 +1,97 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"log"
-	"net/http"
-	"os"
+	"net"
+	"time"
+
+	"go.uber.org/zap"
+
+	"cloud.google.com/go/profiler"
+
+	raven "github.com/getsentry/raven-go"
+	"github.com/kokukuma/finport-go/http"
+	"github.com/kokukuma/finport-go/log"
 )
 
-type authData struct {
-	UserID uint32 `json:"user_id"`
-	UUID   string `json:"uuid"`
-}
-
-func helloWorld(w http.ResponseWriter, r *http.Request) {
-	log.Print(r)
-
-	auth := authData{
-		UserID: 1,
-		UUID:   "12345678",
-	}
-
-	// jsonエンコード
-	outputJSON, err := json.Marshal(&auth)
-	if err != nil {
-		fmt.Fprintf(w, "HelloWorld")
-		return
-	}
-
-	// jsonヘッダーを出力
-	w.Header().Set("Content-Type", "application/json")
-
-	// jsonデータを出力
-	fmt.Fprint(w, string(outputJSON))
-}
-
 func main() {
-	http.HandleFunc("/", helloWorld)
+	// read setttings
+	env, err := http.ReadFromEnv()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 
-	//
-	keyFile := os.Getenv("KEY_PATH")
-	crtFile := os.Getenv("CRT_PATH")
+	// setting logger
+	logger, err := log.New(env.LogLevel)
+	if err != nil {
+		logger.Error(err.Error())
+	}
 
-	//
-	if keyFile == "" || crtFile == "" {
-		log.Print("Start http")
-		log.Fatal(http.ListenAndServe(":8080", nil))
+	// setting profiler
+	err = profiler.Start(profiler.Config{
+		Service:              "finport-profiler",
+		NoHeapProfiling:      true,
+		NoAllocProfiling:     true,
+		NoGoroutineProfiling: true,
+		DebugLogging:         true,
+		// ProjectID must be set if not running on GCP.
+		// ProjectID: "my-project",
+	})
+	if err != nil {
+		logger.Error(err.Error())
+	}
+
+	// setting sentry
+	sentryClient, err := raven.New(env.SentryDSN)
+	if err != nil {
+		logger.Error(err.Error())
+		//return exitError
 	} else {
-		log.Print("Start https")
-		log.Fatal(http.ListenAndServeTLS(":8080", crtFile, keyFile, nil))
+		sentryClient.SetEnvironment(env.Env)
+		sentryClient.SetRelease("1.1")
+	}
+
+	// start server
+	for {
+		err = startServer(env, logger)
+		if err != nil {
+			sentryClient.CaptureError(err, map[string]string{
+				"environment": "development",
+			})
+			logger.Error(err.Error())
+		}
+	}
+}
+
+func startServer(env *http.Env, logger *zap.Logger) error {
+	// create a new server
+	server, err := http.New(logger)
+	if err != nil {
+		return err
+	}
+
+	// start server
+	httpLn, err := net.Listen("tcp", fmt.Sprintf(":%d", env.HTTPPort))
+	if err != nil {
+		return err
+	}
+
+	errChan := make(chan error, 1)
+	go func() {
+		errChan <- server.Serve(httpLn)
+	}()
+
+	// shutdown 10 seond later
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	for {
+		select {
+		case <-ctx.Done():
+			server.Shutdown(ctx)
+		case err := <-errChan:
+			return err
+		}
 	}
 }
